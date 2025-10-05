@@ -167,98 +167,105 @@ const App = () => {
   }, [inputOptions, outputOptions, output]);
 
   return (
-    <div className="page-app">
+    <main className="page-app">
       {spinning && (
         <Spin spinning={spinning} tip={tip}>
           <div className="component-spin" />
         </Spin>
       )}
 
-      <h2 align="center">ffmpeg-online</h2>
-
-      <h4>1. Select file</h4>
-      <p style={{ color: "gray" }}>
-        Your files will not be uploaded to the server, only processed in the
-        browser
-      </p>
-      <Dragger
-        multiple
-        beforeUpload={(file, fileList) => {
-          setFile(file);
-          setFileList((v) => [...v, ...fileList]);
-          setName(file.name);
-          return false;
-        }}
-      >
-        <p className="ant-upload-drag-icon">
-          <InboxOutlined />
+      <h2 align="center">filefast</h2>
+      <section>
+        <h4>1. Select file</h4>
+        <p className="muted">
+          Your files will not be uploaded to the server, only processed in the
+          browser
         </p>
-        <p className="ant-upload-text">Click or drag file</p>
-      </Dragger>
-      <h4>2. Set ffmpeg options</h4>
-      <div className="exec">
-        ffmpeg
-        <Input
-          value={inputOptions}
-          placeholder="please enter input options"
-          onChange={(event) => setInputOptions(event.target.value)}
-        />
-        <Input
-          value={name}
-          placeholder="please enter input filename"
-          onChange={(event) => setName(event.target.value)}
-        />
-        <Input
-          value={outputOptions}
-          placeholder="please enter output options"
-          onChange={(event) => setOutputOptions(event.target.value)}
-        />
-        <Input
-          value={output}
-          placeholder="Please enter the download file name"
-          onChange={(event) => setOutput(event.target.value)}
-        />
-        <div className="command-text">
-          ffmpeg {inputOptions} {name} {outputOptions} {output}
+        <Dragger
+          multiple
+          beforeUpload={(file, fileList) => {
+            setFile(file);
+            setFileList((v) => [...v, ...fileList]);
+            setName(file.name);
+            return false;
+          }}
+        >
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined />
+          </p>
+          <p className="ant-upload-text">Click or drag file</p>
+        </Dragger>
+      </section>
+
+      <section>
+        <h4>2. Set ffmpeg options</h4>
+        <div className="exec">
+          ffmpeg
+          <Input
+            value={inputOptions}
+            placeholder="please enter input options"
+            onChange={(event) => setInputOptions(event.target.value)}
+          />
+          <Input
+            value={name}
+            placeholder="please enter input filename"
+            onChange={(event) => setName(event.target.value)}
+          />
+          <Input
+            value={outputOptions}
+            placeholder="please enter output options"
+            onChange={(event) => setOutputOptions(event.target.value)}
+          />
+          <Input
+            value={output}
+            placeholder="Please enter the download file name"
+            onChange={(event) => setOutput(event.target.value)}
+          />
+          <div className="command-text muted">
+            ffmpeg {inputOptions} {name} {outputOptions} {output}
+          </div>
         </div>
-      </div>
-      <h4>3. Run and get the output file</h4>
-      <Button type="primary" disabled={!Boolean(file)} onClick={handleExec}>
-        run
-      </Button>
-      <br />
-      <br />
-      {href && (
-        <a href={href} download={downloadFileName}>
-          download file
-        </a>
-      )}
-      <h4>4. Get other file from file system (use , split)</h4>
-      <p style={{ color: "gray" }}>
-        In some scenarios, the output file contains multiple files. At this
-        time, multiple file names can be separated by commas and typed into the
-        input box below.
-      </p>
-      <Input
-        value={files}
-        placeholder="Please enter the download file name"
-        onChange={(event) => setFiles(event.target.value)}
-      />
-      <Button type="primary" disabled={!Boolean(file)} onClick={handleGetFiles}>
-        confirm
-      </Button>
-      <br />
-      <br />
-      {outputFiles.map((outputFile, index) => (
-        <div key={index}>
-          <a href={outputFile.href} download={outputFile.name}>
-            {outputFile.name}
+        <h4>3. Run and get the output file</h4>
+        <Button type="primary" disabled={!Boolean(file)} onClick={handleExec}>
+          run
+        </Button>
+        <br />
+        <br />
+        {href && (
+          <a href={href} download={downloadFileName}>
+            download file
           </a>
-          <br />
-        </div>
-      ))}
-      <br />
-      <br />
+        )}
+      </section>
+
+      {/* <section>
+        <h4>4. Get other file from file system (use , split)</h4>
+        <p className="muted">
+          In some scenarios, the output file contains multiple files. At this
+          time, multiple file names can be separated by commas and typed into the
+          input box below.
+        </p>
+        <Input
+          value={files}
+          placeholder="Please enter the download file name"
+          onChange={(event) => setFiles(event.target.value)}
+        />
+        <Button type="primary" disabled={!Boolean(file)} onClick={handleGetFiles}>
+          confirm
+        </Button>
+        <br />
+        <br />
+        {outputFiles.map((outputFile, index) => (
+          <div key={index}>
+            <a href={outputFile.href} download={outputFile.name}>
+              {outputFile.name}
+            </a>
+            <br />
+          </div>
+        ))}
+        <br />
+        <br /> 
+      </section> */}
       <a
         href="https://github.com/xiguaxigua/ffmpeg-online"
         target="_blank"
@@ -297,7 +304,7 @@ const App = () => {
         </svg>
       </a>
       <Analytics />
-    </div>
+    </main>
   );
 };
 

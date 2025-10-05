@@ -1,3 +1,18 @@
+:root {
+  --light-color: rgb(245, 245, 245);
+  --light-secondary: rgb(240, 240, 240);
+  --light-muted: rgb(170, 170, 170);
+  --dark-color: rgb(50, 50, 50);
+  --dark-secondary: rgb(60, 60, 60);
+  --dark-muted: rgb(100, 100, 100);
+}
+
+body {
+  color-scheme: light dark;
+  background-color: light-dark(var(--light-color), var(--dark-color));
+  color: light-dark(var(--dark-color), var(--light-color));
+}
+
 .component-spin {
   position: fixed;
   left: 0;
@@ -5,20 +20,21 @@
   top: 0;
   bottom: 0;
   z-index: 100;
-  background-color: hsla(0, 0%, 100%, 0.9);
+  /* background-color: hsla(0, 0%, 100%, 0.9); */
 }
 
 .command-text {
-  border: 1px solid #eee;
+  /* border: light-dark(1px solid #eee, 1px solid); */
   padding: 3px 6px;
-  color: #ccc;
   border-radius: 3px;
 }
 
+/* change */
 .ant-spin-nested-loading > div > .ant-spin {
   max-height: none !important;
 }
 
+/* change */
 .ant-spin-nested-loading {
   position: fixed;
   left: 0;
@@ -44,11 +60,16 @@
 }
 
 .ant-input {
+  background-color: light-dark(var(--light-secondary), var(--dark-secondary));
   margin: 10px 0;
 }
 
 h4 {
   margin-top: 20px;
+}
+
+.muted {
+  color: light-dark(var(--dark-muted), var(--light-muted));
 }
 
 .github-corner:hover .octo-arm {

@@ -13,6 +13,10 @@ body {
   color: light-dark(var(--dark-color), var(--light-color));
 }
 
+section {
+  margin-bottom: 1rem;
+}
+
 .component-spin {
   position: fixed;
   left: 0;
@@ -27,6 +31,7 @@ body {
   /* border: light-dark(1px solid #eee, 1px solid); */
   padding: 3px 6px;
   border-radius: 3px;
+  font-family: monospace;
 }
 
 /* change */
@@ -70,6 +75,10 @@ h4 {
 
 .muted {
   color: light-dark(var(--dark-muted), var(--light-muted));
+}
+
+.small {
+  font-size: 0.9em;
 }
 
 .github-corner:hover .octo-arm {

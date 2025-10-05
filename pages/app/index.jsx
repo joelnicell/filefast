@@ -1,30 +1,38 @@
-import { Spin, Upload, Input, Button, message } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { Spin, Upload, Input, Button, message, Slider } from "antd";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import { InboxOutlined } from "@ant-design/icons";
 import { fileTypeFromBuffer } from "file-type";
 import { Analytics } from "@vercel/analytics/react";
 import numerify from "numerify/lib/index.cjs";
+import { formatQuality, formatName } from "../utils";
 import qs from "query-string";
 import JSZip from "jszip";
 
 const { Dragger } = Upload;
+const SLIDER_MAX = 100;
 
 const App = () => {
   const [spinning, setSpinning] = useState(false);
   const [tip, setTip] = useState(false);
-  const [inputOptions, setInputOptions] = useState("-i");
-  const [outputOptions, setOutputOptions] = useState("");
+
+  const [quality, setQuality] = useState(SLIDER_MAX * 0.7);
+  const [compression, setCompression] = useState(SLIDER_MAX * 0.8);
+  const [outputExtension, setOutputExtension] = useState("jpg");
+
   const [files, setFiles] = useState("");
   const [outputFiles, setOutputFiles] = useState([]);
   const [href, setHref] = useState("");
   const [file, setFile] = useState();
   const [fileList, setFileList] = useState([]);
-  const [name, setName] = useState("input.mp4");
-  const [output, setOutput] = useState("output.mp4");
-  const [downloadFileName, setDownloadFileName] = useState("output.mp4");
+  const [name, setName] = useState("input.jpg");
+  const [outputName, setOutputName] = useState("output");
+  const [downloadFileName, setDownloadFileName] = useState("output.jpg");
   const ffmpeg = useRef();
   const currentFSls = useRef([]);
+
+  
+  const formattedQuality = useMemo(() => formatQuality(outputExtension, quality), [outputExtension, quality]);
 
   const handleExec = async () => {
     if (!file) {
@@ -46,11 +54,17 @@ const App = () => {
       currentFSls.current = ffmpeg.current.FS("readdir", ".");
       setTip("start executing the command");
       await ffmpeg.current.run(
-        ...inputOptions.split(" "),
+        "-i",
         name,
-        ...outputOptions.split(" "),
-        output
-      );
+        "-q:v",
+        formattedQuality,
+        `${outputName}.${outputExtension}`);
+      // await ffmpeg.current.run(
+      //   ...inputOptions.split(" "),
+      //   name,
+      //   ...outputOptions.split(" "),
+      //   output
+      // );
       setSpinning(false);
       const FSls = ffmpeg.current.FS("readdir", ".");
       const outputFiles = FSls.filter((i) => !currentFSls.current.includes(i));
@@ -125,6 +139,7 @@ const App = () => {
     setOutputFiles(outputFilesData);
   };
 
+  // load ffmpeg
   useEffect(() => {
     (async () => {
       ffmpeg.current = createFFmpeg({
@@ -143,28 +158,28 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const { inputOptions, outputOptions, output } = qs.parse(
+    const { quality, compression, output } = qs.parse(
       window.location.search
     );
-    if (inputOptions) {
-      setInputOptions(inputOptions);
+    if (quality) {
+      setQuality(quality);
     }
-    if (outputOptions) {
-      setOutputOptions(outputOptions);
+    if (compression) {
+      setCompression(compression);
     }
     if (output) {
-      setOutput(output);
+      setOutputName(output);
     }
   }, []);
 
   useEffect(() => {
-    // run after inputOptions and outputOptions set from querystring
+    // run after outputOptions set from querystring
     setTimeout(() => {
-      let queryString = qs.stringify({ inputOptions, outputOptions, output });
+      let queryString = qs.stringify({ quality, compression, output: outputName });
       const newUrl = `${location.origin}${location.pathname}?${queryString}`;
       history.pushState("", "", newUrl);
     });
-  }, [inputOptions, outputOptions, output]);
+  }, [quality, compression, outputName]);
 
   return (
     <main className="page-app">
@@ -176,7 +191,7 @@ const App = () => {
 
       <h2 align="center">filefast</h2>
       <section>
-        <h4>1. Select file</h4>
+        <h3>1. Select file</h3>
         <p className="muted">
           Your files will not be uploaded to the server, only processed in the
           browser
@@ -187,6 +202,7 @@ const App = () => {
             setFile(file);
             setFileList((v) => [...v, ...fileList]);
             setName(file.name);
+            setOutputName(formatName(file.name));
             return false;
           }}
         >
@@ -198,34 +214,44 @@ const App = () => {
       </section>
 
       <section>
-        <h4>2. Set ffmpeg options</h4>
+        <h3>2. Convert to</h3>
+        <p>.jpg</p>
         <div className="exec">
-          ffmpeg
-          <Input
-            value={inputOptions}
-            placeholder="please enter input options"
-            onChange={(event) => setInputOptions(event.target.value)}
+          <h4>Quality</h4>
+          <Slider 
+            min={0}
+            max={100}
+            value={quality}
+            onChange={(value) => setQuality(value)}
+            />
+          <p className="muted small">Higher quality means larger file size</p>
+          <h4>Compression</h4>
+          <Slider 
+            value={compression}
+            onChange={(value) => setCompression(value)}
+            min={0}
+            max={100}
           />
+          <p className="muted small">Higher compression has better results, but may take longer to process. Not yet implemented</p>
+          {/* 
           <Input
             value={name}
             placeholder="please enter input filename"
             onChange={(event) => setName(event.target.value)}
           />
-          <Input
-            value={outputOptions}
-            placeholder="please enter output options"
-            onChange={(event) => setOutputOptions(event.target.value)}
-          />
-          <Input
-            value={output}
-            placeholder="Please enter the download file name"
-            onChange={(event) => setOutput(event.target.value)}
-          />
-          <div className="command-text muted">
-            ffmpeg {inputOptions} {name} {outputOptions} {output}
+          */}
+          <div className={"command-text muted"}> {/** include compression here */}
+            ffmpeg -i {name} -q:v {formattedQuality} {outputName}.{outputExtension}
           </div>
         </div>
-        <h4>3. Run and get the output file</h4>
+      </section>
+      <section>
+        <h3>3. Run and get the output file</h3>
+        <Input
+            value={outputName}
+            placeholder="Please enter the download file name"
+            onChange={(event) => setOutputName(event.target.value)}
+          /> 
         <Button type="primary" disabled={!Boolean(file)} onClick={handleExec}>
           run
         </Button>
@@ -236,10 +262,10 @@ const App = () => {
             download file
           </a>
         )}
-      </section>
+    </section>
 
       {/* <section>
-        <h4>4. Get other file from file system (use , split)</h4>
+        <h3>4. Get other file from file system (use , split)</h3>
         <p className="muted">
           In some scenarios, the output file contains multiple files. At this
           time, multiple file names can be separated by commas and typed into the
@@ -266,7 +292,7 @@ const App = () => {
         <br />
         <br /> 
       </section> */}
-      <a
+      {/* <a
         href="https://github.com/xiguaxigua/ffmpeg-online"
         target="_blank"
         className="github-corner"
@@ -302,7 +328,7 @@ const App = () => {
             className="octo-body"
           ></path>
         </svg>
-      </a>
+      </a> */}
       <Analytics />
     </main>
   );

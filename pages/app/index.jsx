@@ -5,7 +5,7 @@ import { InboxOutlined } from "@ant-design/icons";
 import { fileTypeFromBuffer } from "file-type";
 import { Analytics } from "@vercel/analytics/react";
 import numerify from "numerify/lib/index.cjs";
-import { formatQuality, rmExtension, getExtensionType } from "../utils";
+import { formatQuality, rmExtension, getExtensionType } from "../../lib/utils";
 import qs from "query-string";
 import JSZip from "jszip";
 import ActionBtn from "../../components/ActionBtn";

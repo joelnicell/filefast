@@ -1,7 +1,7 @@
 import { Upload } from "antd";
 import { useState } from "react";
 import { InboxOutlined } from '@ant-design/icons';
-import { rmExtension } from "../pages/utils";
+import { rmExtension } from "../lib/utils";
 
 const Dragger = ({ setFile, setFileList}) => {
   const [hasUploaded, setHasUploaded] = useState(false);

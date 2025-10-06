@@ -1,41 +1,27 @@
-# ffmpeg-online
+# Filefast
 
-> https://ffmpeg-online.vercel.app/
+A fork of 'ffmpeg-online' created by xiguaxigua
 
-An online version of ffmpeg based on ffmpeg.wasm, which can be used to process audio and video online
+This version fixes the main issue I found with the original, which is that users can't batch process multiple sources at the same time very easily, only the last file the user inputted.
 
-## Clip video
+The original inspired me to build something I would want to use every day, with a more pleasing UI, and functionality that I'd use every day.
 
-In ffmpeg, the command for video clipping is
+It supports:
+- Dark mode
+- Batch file processing
+- Better output name management
 
-```shell
-ffmpeg -i test.mp4 -ss 00:00:00 -t 00:00:05 -vcodec copy -acodec copy output.mp4
-```
+The aim of Filefast is to get 'faster' files by means of smaller file size, quickly and easily.
 
-You can upload the `test.mp4` file and run the command following the example below
+### Current state:
 
-![](./demo/clip-video.jpg)
+This version is very limited, supporting conversion of images to jpegs with quality control. I'd like to implement:
+- a more robust and tested system for other image formats
+- Video compression
+- Audio compression
+- Automate codecs and quality control (currently only using the ffmpeg quality flag)
 
-## Audio and video synthesis
+### Links
+View the original repository here:
+> https://github.com/xiguaxigua/ffmpeg-online
 
-In ffmpeg, the command for audio and video synthesis is
-
-```shell
-ffmpeg -i test.mp4 -i test.mp3 -c:v copy -c:a aac -strict experimental -map 0:v:0 -map 1:a:0 -shortest output.mp4
-```
-
-You can upload the `test.mp4` `test.mp3` file and run the command following the example below
-
-![](./demo/video-audio.jpg)
-
-## Crop video
-
-In ffmpeg, the command for video cropping is
-
-```shell
-ffmpeg -i test.mp4 -strict -2 -vf crop=1126:742:0:420 output.mp4
-```
-
-You can upload the `test.mp4` file and run the command following the example below
-
-![](./demo/crop-video.jpg)

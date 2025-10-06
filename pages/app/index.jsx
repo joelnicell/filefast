@@ -5,11 +5,13 @@ import { InboxOutlined } from "@ant-design/icons";
 import { fileTypeFromBuffer } from "file-type";
 import { Analytics } from "@vercel/analytics/react";
 import numerify from "numerify/lib/index.cjs";
-import { formatQuality, rmExtension } from "../utils";
+import { formatQuality, rmExtension, getExtensionType } from "../utils";
 import qs from "query-string";
 import JSZip from "jszip";
 import ActionBtn from "../../components/ActionBtn";
 import Tag from "../../components/Tag";
+import Tags from "../../components/Tags";
+import ArrowRight from "../../components/ArrowRight";
 // import Dragger from "../../components/Dragger"; // not being used, error with styling
 
 const { Dragger } = Upload;
@@ -20,6 +22,7 @@ const App = () => {
   const [spinning, setSpinning] = useState(false);
   const [tip, setTip] = useState(false);
 
+  // default options
   const [quality, setQuality] = useState(SLIDER_MAX * 0.7);
   const [compression, setCompression] = useState(SLIDER_MAX * 0.8);
   const [outputExtension, setOutputExtension] = useState("jpg");
@@ -28,18 +31,15 @@ const App = () => {
 
   const [ogOn, setOgOn] = useState(true);
   const [customOn, setCustomOn] = useState(true);
+  const [type, setType] = useState("image"); // image, video, audio, none
 
-  const [files, setFiles] = useState("");
-  const [outputFiles, setOutputFiles] = useState([]);
   const [href, setHref] = useState("");
   const [file, setFile] = useState(); // deprecate and just iterate over the fileList
   const [fileList, setFileList] = useState([]); // files from the uploader
-  const [name, setName] = useState("input.jpg"); // deprecate and replace with names, setNames (based on fileList from upload)
   const [customOutput, setCustomOutput] = useState("_converted"); // deprecate and create output name during exec. 
   const [downloadFileName, setDownloadFileName] = useState("output.jpg");
   const ffmpeg = useRef();
   const currentFSls = useRef([]);
-
   
   const formattedQuality = useMemo(() => formatQuality(outputExtension, quality), [outputExtension, quality]);
   const outputName = useCallback((name) => {
@@ -74,7 +74,7 @@ const App = () => {
       }
       currentFSls.current = ffmpeg.current.FS("readdir", ".");
       setTip("start executing the command");
-      // turn this into a loop for all files in currentFSLs
+      // loop over names and execute ffmpeg for all
       for (const name of names) {
         await ffmpeg.current.run(
           "-i",
@@ -128,35 +128,6 @@ const App = () => {
     }
   };
 
-  const handleGetFiles = async () => {
-    if (!files) {
-      return;
-    }
-    const filenames = files
-      .split(",")
-      .filter((i) => i)
-      .map((i) => i.trim());
-    const outputFilesData = [];
-    for (let filename of filenames) {
-      try {
-        const data = ffmpeg.current.FS("readFile", filename);
-        const type = await fileTypeFromBuffer(data.buffer);
-
-        const objectURL = URL.createObjectURL(
-          new Blob([data.buffer], { type: type.mime })
-        );
-        outputFilesData.push({
-          name: filename,
-          href: objectURL,
-        });
-      } catch (err) {
-        message.error(`${filename} get failed`);
-        console.error(err);
-      }
-    }
-    setOutputFiles(outputFilesData);
-  };
-
   // load ffmpeg
   useEffect(() => {
     (async () => {
@@ -200,139 +171,110 @@ const App = () => {
   }, [quality, compression, customOutput]);
 
   return (
-    <main className="page-app">
+    <main>
       {spinning && (
         <Spin spinning={spinning} tip={tip}>
           <div className="component-spin" />
         </Spin>
       )}
 
-      <h2 align="center">FileFast</h2>
-      <section>
-        <h3>Select file(s)</h3>
-        <p className="muted small">
-          Your files will not be uploaded to the server, only processed in the
-          browser
-        </p>
-        <Dragger
-          multiple
-          beforeUpload={(file, fileList) => {
-            setFile(file); // not needed, but is needed for button at the end to run.
-            if (fileList.length > 1) {
-              setFileList(fileList); // still triggers every time.
-              setNames(fileList.map(f => f.name));
-            } else {
-              setFileList(p => [...p, file]);
-              setNames(p => [...p, file.name]);
-            }
-            // setName(file.name); // replacing with names
-            return false;
-          }}
-        >
-          <p className="ant-upload-drag-icon">
-            <InboxOutlined />
+      <h1 align="center">FileFast</h1>
+      <div className="section-container">
+        <section>
+          <h3>Select file(s)</h3>
+          <p className="muted small">
+            Your files will not be uploaded to the server, only processed in the
+            browser
           </p>
-          <p className="ant-upload-text">Click or drag file</p>
-        </Dragger> 
-      </section>
+          <Dragger
+            multiple
+            beforeUpload={(file, fileList) => {
+              setFile(file); // not needed, but is needed for button at the end to run.
+              setType(getExtensionType(fileList[0].name));
+              console.log(getExtensionType(fileList[0].name));
+              if (fileList.length > 1) {
+                setFileList(fileList); // still triggers every time.
+                setNames(fileList.map(f => f.name));
+              } else {
+                setFileList(p => [...p, file]);
+                setNames(p => [...p, file.name]);
+              }
+              return false;
+            }}
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p className="ant-upload-text">Click or drag file</p>
+          </Dragger> 
+        </section>
+        <ArrowRight disabled={names.length === 0}/>
 
-      <section>
-        <h3>What do you want to do?</h3>
-        <div className="btn-container">
-          <ActionBtn onClick={() => setAction("convert")} active={action == "convert"}>Convert</ActionBtn>
-          <ActionBtn onClick={() => setAction("compress")} active={action == "compress"}>Compress</ActionBtn>
-        </div>
-        <div className="tag-container">
-          <Tag onClick={() => setOutputExtension("jpg")} active={outputExtension == "jpg"}>.jpeg</Tag>
-          <Tag onClick={() => setOutputExtension("png")} active={outputExtension == "png"}>.png</Tag>
-          <Tag onClick={() => setOutputExtension("webp")} active={outputExtension == "webp"}>.webp</Tag>
-          <Tag onClick={() => setOutputExtension("avif")} active={outputExtension == "avif"}>.avif</Tag>
-        </div>
-        <div className="exec">
-          <h4>Quality</h4>
-          <Slider 
-            min={0}
-            max={100}
-            value={quality}
-            onChange={(value) => setQuality(value)}
-            handleActiveColor="#2da8b0"
+        <section className={names.length === 0 ? "section-disabled" : ""}>
+          <h3>What do you want to do?</h3>
+          <div className="btn-container">
+            <ActionBtn onClick={() => setAction("convert")} active={action == "convert"}>Convert</ActionBtn>
+            <ActionBtn onClick={() => setAction("compress")} active={action == "compress"}>Compress</ActionBtn>
+          </div>
+          <Tags outputType={type} outputExtension={outputExtension} setOutputExtension={setOutputExtension} />
+          <div className="exec">
+            <h4>Quality</h4>
+            <Slider 
+              min={0}
+              max={100}
+              value={quality}
+              onChange={(value) => setQuality(value)}
+              handleActiveColor="#2da8b0"
+              />
+            <p className="muted small">Higher quality means larger file size</p>
+            <h4>Compression</h4>
+            <Slider 
+              value={compression}
+              onChange={(value) => setCompression(value)}
+              min={0}
+              max={100}
+              className=""
             />
-          <p className="muted small">Higher quality means larger file size</p>
-          <h4>Compression</h4>
-          <Slider 
-            value={compression}
-            onChange={(value) => setCompression(value)}
-            min={0}
-            max={100}
-            className=""
-          />
-          <p className="muted small">Higher compression has better results, but may take longer to process. Not yet implemented</p>
-          {/* 
+            <p className="muted small">Higher compression has better results, but may take longer to process. Not yet implemented</p>
+            {/* 
+            <Input
+              value={name}
+              placeholder="please enter input filename"
+              onChange={(event) => setName(event.target.value)}
+            />
+            */}
+
+            {/* <div className={"command-text muted"}> include compression here 
+              ffmpeg -i {name} -q:v {formattedQuality} {outputName}.{outputExtension} replace this with new custom name later.
+            </div>
+            */}
+
+          </div>
+        </section>
+        <ArrowRight disabled={names.length === 0}/>
+        <section className={names.length === 0 ? "section-disabled" : ""}>
+          <h3>Output</h3>
+          <h4>Pattern</h4>
+          <Tag large onClick={() => setOgOn(p => !p)} active={ogOn}>Original Name</Tag>
+          <Tag large onClick={() => setCustomOn(p => !p)}active={customOn}>Custom</Tag>
           <Input
-            value={name}
-            placeholder="please enter input filename"
-            onChange={(event) => setName(event.target.value)}
-          />
-          */}
-
-          {/* <div className={"command-text muted"}> include compression here 
-            ffmpeg -i {name} -q:v {formattedQuality} {outputName}.{outputExtension} replace this with new custom name later.
-          </div>
-           */}
-
-        </div>
-      </section>
-      <section className={names.length === 0 ? "section-disabled" : ""}>
-        <h3>Output</h3>
-        <h4>Pattern</h4>
-        <Tag large onClick={() => setOgOn(p => !p)} active={ogOn}>Original Name</Tag>
-        <Tag large onClick={() => setCustomOn(p => !p)}active={customOn}>Custom</Tag>
-        <Input
-            value={customOutput} // todo: remove and replace this with custom name feature later.
-            placeholder="Custom output"
-            onChange={(event) => setCustomOutput(event.target.value)}
-          /> 
-          {names.length > 0 && <p className="muted small">Example output: {outputName(names[0])}</p>}
-        <Button type="primary" disabled={!Boolean(file)} onClick={handleExec}>
-          run
-        </Button>
-        <br />
-        <br />
-        {href && (
-          <a href={href} download={downloadFileName}>
-            download file
-          </a>
-        )}
-    </section>
-
-      {/* <section>
-        <h3>4. Get other file from file system (use , split)</h3>
-        <p className="muted">
-          In some scenarios, the output file contains multiple files. At this
-          time, multiple file names can be separated by commas and typed into the
-          input box below.
-        </p>
-        <Input
-          value={files}
-          placeholder="Please enter the download file name"
-          onChange={(event) => setFiles(event.target.value)}
-        />
-        <Button type="primary" disabled={!Boolean(file)} onClick={handleGetFiles}>
-          confirm
-        </Button>
-        <br />
-        <br />
-        {outputFiles.map((outputFile, index) => (
-          <div key={index}>
-            <a href={outputFile.href} download={outputFile.name}>
-              {outputFile.name}
+              value={customOutput} // todo: remove and replace this with custom name feature later.
+              placeholder="Custom output"
+              onChange={(event) => setCustomOutput(event.target.value)}
+            /> 
+            {names.length > 0 && <p className="muted small">Example output: {outputName(names[0])}</p>}
+          <Button type="primary" disabled={!Boolean(fileList[0])} onClick={handleExec}>
+            run
+          </Button>
+          <br />
+          <br />
+          {href && (
+            <a href={href} download={downloadFileName}>
+              download file
             </a>
-            <br />
-          </div>
-        ))}
-        <br />
-        <br /> 
-      </section> */}
+          )}
+      </section>
+    </div>
       {/* <a
         href="https://github.com/xiguaxigua/ffmpeg-online"
         target="_blank"

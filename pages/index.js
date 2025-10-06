@@ -4,7 +4,8 @@ import App from "./app";
 export default function Home() {
   return(
     <ConfigProvider
-    theme={{algorithm: theme.darkAlgorithm}}>
+    theme={{algorithm: theme.darkAlgorithm}}
+    >
       <App />
     </ConfigProvider>
 )}

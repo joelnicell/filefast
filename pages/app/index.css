@@ -3,15 +3,14 @@
   --light-secondary: rgb(240, 240, 240);
   --light-tertiary: rgb(210, 210, 210);
   --light-muted: rgb(170, 170, 170);
-  --dark-color: rgb(50, 50, 50);
-  --dark-secondary: rgb(60, 60, 60);
-  --dark-tertiary: rgb(90, 90, 90);
-  --dark-muted: rgb(100, 100, 100);
+  --dark-color: rgb(22, 26, 25);
+  --dark-secondary: rgb(56, 61, 60);
+  --dark-tertiary: rgb(94, 92, 90);
+  --dark-muted: rgb(92, 104, 100);
 
   --primary: rgb(45, 168, 176);
   --secondary: rgb(45, 176, 93);
   --tertiary: rgb(209, 122, 88);
-
 }
 
 body {
@@ -20,11 +19,26 @@ body {
   color: light-dark(var(--dark-color), var(--light-color));
 }
 
+main {
+  /* width: 100vw; */
+  padding-top: 3rem;
+}
+
 section {
-  margin-bottom: 1rem;
   transition: all 0.3s cubic-bezier(0.22, 0.88, 0.52, 0.99);
-  border-bottom: 1px solid light-dark(var(--light-secondary), var(--dark-secondary));
+  /* border-bottom: 1px solid light-dark(var(--light-secondary), var(--dark-secondary)); */
   padding-bottom: 1rem;
+  width: 400px;
+  /* height: 200px; */
+}
+
+h1, h2, h3 {
+  text-align: center;
+}
+
+h1 {
+  /* margin-top: 1.5rem; */
+  margin-bottom: 3rem;
 }
 
 .component-spin {
@@ -59,19 +73,8 @@ section {
   z-index: 100;
 }
 
-.page-app {
-  width: 500px;
-  padding-top: 20px;
-  margin: 0 auto;
-}
-
 .ant-upload.ant-upload {
-  width: 500px;
   padding: 10px;
-}
-
-.exec {
-  width: 500px;
 }
 
 .ant-input {
@@ -172,11 +175,23 @@ h4 {
   flex-wrap: wrap;
 }
 
-.section-disabled {
-  opacity: 0.5;
-  pointer-events: none;
-  filter: blur(1px);
+.section-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: fit-content;
+  margin: 0 auto;
+  gap: 20px;
+  padding-bottom: 5rem;
 }
+
+
+.section-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  filter: grayscale(100%);
+}
+
 
 .github-corner:hover .octo-arm {
   animation: octocat-wave 560ms ease-in-out;
@@ -202,4 +217,9 @@ h4 {
   .github-corner .octo-arm {
     animation: octocat-wave 560ms ease-in-out;
   }
+}
+
+.lucide-arrow-right {
+  color: light-dark(var(--dark-muted), var(--light-muted));
+  transform: rotate(90deg);
 }

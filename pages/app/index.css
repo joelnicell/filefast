@@ -22,6 +22,9 @@ body {
 
 section {
   margin-bottom: 1rem;
+  transition: all 0.3s cubic-bezier(0.22, 0.88, 0.52, 0.99);
+  border-bottom: 1px solid light-dark(var(--light-secondary), var(--dark-secondary));
+  padding-bottom: 1rem;
 }
 
 .component-spin {
@@ -125,13 +128,30 @@ h4 {
   opacity: 0.7;
 }
 
-.tag {
-  border-radius: 100px;
+.tag, .tag-large {
   background-color: light-dark(var(--light-secondary), var(--dark-secondary));
   border: 1px solid light-dark(var(--light-tertiary), var(--dark-tertiary));
-  padding: 2px 10px;
   cursor: pointer;
+  border-radius: 100px;
+  margin: 0 4px;
+  color: light-dark(var(--dark-muted), var(--light-muted));
+  transition: box-shadow 0.3s cubic-bezier(0.22, 0.88, 0.52, 0.99);
+  box-shadow: 0 0 0 0px transparent;
+}
+
+.tag {
+  padding: 2px 10px;
   font-size: 0.8em;
+}
+
+.tag-large {
+  padding: 4px 20px;
+  font-size: 0.9em;
+}
+
+.tag-active {
+  box-shadow: 0 0 0 2px var(--primary);
+  color: light-dark(var(--dark-color), var(--light-color));
 }
 
 /* containers */
@@ -141,15 +161,21 @@ h4 {
   margin-bottom: 0.5rem;
   justify-content: center;
   align-items: center;
-  gap: 6px;
 }
 
 .btn-container {
+  gap: 6px;
   height: 80px;
 }
 
 .tag-container {
   flex-wrap: wrap;
+}
+
+.section-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  filter: blur(1px);
 }
 
 .github-corner:hover .octo-arm {

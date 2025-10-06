@@ -14,7 +14,8 @@ function remap(value, a, b, c, d) {
   return c + (value - a) * (d - c) / b - a;
 }
 
-export function formatName(name) {
+export function rmExtension(name) {
+  if (!name) return "";
   if (name.includes('.jpeg') || name.includes('.jpg') || name.includes('.png') || name.includes('.webp')) {
     return name.replace(/\.(jpeg|jpg|png|webp)$/i, '');
   }

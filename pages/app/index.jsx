@@ -1,17 +1,19 @@
 import { Spin, Upload, Input, Button, message, Slider } from "antd";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import { InboxOutlined } from "@ant-design/icons";
 import { fileTypeFromBuffer } from "file-type";
 import { Analytics } from "@vercel/analytics/react";
 import numerify from "numerify/lib/index.cjs";
-import { formatQuality, formatName } from "../utils";
+import { formatQuality, rmExtension } from "../utils";
 import qs from "query-string";
 import JSZip from "jszip";
 import ActionBtn from "../../components/ActionBtn";
 import Tag from "../../components/Tag";
+// import Dragger from "../../components/Dragger"; // not being used, error with styling
 
 const { Dragger } = Upload;
+
 const SLIDER_MAX = 100;
 
 const App = () => {
@@ -22,20 +24,35 @@ const App = () => {
   const [compression, setCompression] = useState(SLIDER_MAX * 0.8);
   const [outputExtension, setOutputExtension] = useState("jpg");
   const [action, setAction] = useState("convert"); // convert, compress
+  const [names, setNames] = useState([]);
+
+  const [ogOn, setOgOn] = useState(true);
+  const [customOn, setCustomOn] = useState(true);
 
   const [files, setFiles] = useState("");
   const [outputFiles, setOutputFiles] = useState([]);
   const [href, setHref] = useState("");
-  const [file, setFile] = useState();
-  const [fileList, setFileList] = useState([]);
-  const [name, setName] = useState("input.jpg");
-  const [outputName, setOutputName] = useState("output");
+  const [file, setFile] = useState(); // deprecate and just iterate over the fileList
+  const [fileList, setFileList] = useState([]); // files from the uploader
+  const [name, setName] = useState("input.jpg"); // deprecate and replace with names, setNames (based on fileList from upload)
+  const [customOutput, setCustomOutput] = useState("_converted"); // deprecate and create output name during exec. 
   const [downloadFileName, setDownloadFileName] = useState("output.jpg");
   const ffmpeg = useRef();
   const currentFSls = useRef([]);
 
   
   const formattedQuality = useMemo(() => formatQuality(outputExtension, quality), [outputExtension, quality]);
+  const outputName = useCallback((name) => {
+    let output = "";
+    if (ogOn) {
+      output += rmExtension(name);
+    }
+    if (customOn) {
+      output += customOutput;
+    }
+    output += `.${outputExtension}`;
+    return output;
+  }, [ogOn, customOn, customOutput, outputExtension]);
 
   const handleExec = async () => {
     if (!file) {
@@ -47,6 +64,7 @@ const App = () => {
     try {
       setTip("Loading file into browser");
       setSpinning(true);
+      // load files from state into ffmpeg file system
       for (const fileItem of fileList) {
         ffmpeg.current.FS(
           "writeFile",
@@ -56,18 +74,15 @@ const App = () => {
       }
       currentFSls.current = ffmpeg.current.FS("readdir", ".");
       setTip("start executing the command");
-      await ffmpeg.current.run(
-        "-i",
-        name,
-        "-q:v",
-        formattedQuality,
-        `${outputName}.${outputExtension}`);
-      // await ffmpeg.current.run(
-      //   ...inputOptions.split(" "),
-      //   name,
-      //   ...outputOptions.split(" "),
-      //   output
-      // );
+      // turn this into a loop for all files in currentFSLs
+      for (const name of names) {
+        await ffmpeg.current.run(
+          "-i",
+          name,
+          "-q:v",
+          formattedQuality,
+          outputName(name));
+      }
       setSpinning(false);
       const FSls = ffmpeg.current.FS("readdir", ".");
       const outputFiles = FSls.filter((i) => !currentFSls.current.includes(i));
@@ -143,22 +158,22 @@ const App = () => {
   };
 
   // load ffmpeg
-  // useEffect(() => {
-  //   (async () => {
-  //     ffmpeg.current = createFFmpeg({
-  //       log: true,
-  //       corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
-  //     });
-  //     ffmpeg.current.setProgress(({ ratio }) => {
-  //       console.log(ratio);
-  //       setTip(numerify(ratio, "0.0%"));
-  //     });
-  //     setTip("ffmpeg static resource loading...");
-  //     setSpinning(true);
-  //     await ffmpeg.current.load();
-  //     setSpinning(false);
-  //   })();
-  // }, []);
+  useEffect(() => {
+    (async () => {
+      ffmpeg.current = createFFmpeg({
+        log: true,
+        corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+      });
+      ffmpeg.current.setProgress(({ ratio }) => {
+        console.log(ratio);
+        setTip(numerify(ratio, "0.0%"));
+      });
+      setTip("ffmpeg static resource loading...");
+      setSpinning(true);
+      await ffmpeg.current.load();
+      setSpinning(false);
+    })();
+  }, []);
 
   useEffect(() => {
     const { quality, compression, output } = qs.parse(
@@ -170,19 +185,19 @@ const App = () => {
     if (compression) {
       setCompression(compression);
     }
-    if (output) {
-      setOutputName(output);
+    if (output) { // todo: replace this with new custom name later.
+      setCustomOutput(output);
     }
   }, []);
 
   useEffect(() => {
     // run after outputOptions set from querystring
     setTimeout(() => {
-      let queryString = qs.stringify({ quality, compression, output: outputName });
+      let queryString = qs.stringify({ quality, compression, output: customOutput }); // todo: replace this with new custom name later.
       const newUrl = `${location.origin}${location.pathname}?${queryString}`;
       history.pushState("", "", newUrl);
     });
-  }, [quality, compression, outputName]);
+  }, [quality, compression, customOutput]);
 
   return (
     <main className="page-app">
@@ -194,18 +209,23 @@ const App = () => {
 
       <h2 align="center">FileFast</h2>
       <section>
-        <h3>1. Select file</h3>
-        <p className="muted">
+        <h3>Select file(s)</h3>
+        <p className="muted small">
           Your files will not be uploaded to the server, only processed in the
           browser
         </p>
         <Dragger
           multiple
           beforeUpload={(file, fileList) => {
-            setFile(file);
-            setFileList((v) => [...v, ...fileList]);
-            setName(file.name);
-            setOutputName(formatName(file.name));
+            setFile(file); // not needed, but is needed for button at the end to run.
+            if (fileList.length > 1) {
+              setFileList(fileList); // still triggers every time.
+              setNames(fileList.map(f => f.name));
+            } else {
+              setFileList(p => [...p, file]);
+              setNames(p => [...p, file.name]);
+            }
+            // setName(file.name); // replacing with names
             return false;
           }}
         >
@@ -213,7 +233,7 @@ const App = () => {
             <InboxOutlined />
           </p>
           <p className="ant-upload-text">Click or drag file</p>
-        </Dragger>
+        </Dragger> 
       </section>
 
       <section>
@@ -223,11 +243,10 @@ const App = () => {
           <ActionBtn onClick={() => setAction("compress")} active={action == "compress"}>Compress</ActionBtn>
         </div>
         <div className="tag-container">
-          <Tag onClick={() => {}}>.jpeg</Tag>
-          <Tag onClick={() => {}} disabled>.png</Tag>
-          <Tag onClick={() => {}} disabled>.tiff</Tag>
-          <Tag onClick={() => {}} disabled>.webp</Tag>
-          <Tag onClick={() => {}} disabled>.avif</Tag>
+          <Tag onClick={() => setOutputExtension("jpg")} active={outputExtension == "jpg"}>.jpeg</Tag>
+          <Tag onClick={() => setOutputExtension("png")} active={outputExtension == "png"}>.png</Tag>
+          <Tag onClick={() => setOutputExtension("webp")} active={outputExtension == "webp"}>.webp</Tag>
+          <Tag onClick={() => setOutputExtension("avif")} active={outputExtension == "avif"}>.avif</Tag>
         </div>
         <div className="exec">
           <h4>Quality</h4>
@@ -255,18 +274,25 @@ const App = () => {
             onChange={(event) => setName(event.target.value)}
           />
           */}
-          <div className={"command-text muted"}> {/** include compression here */}
-            ffmpeg -i {name} -q:v {formattedQuality} {outputName}.{outputExtension}
+
+          {/* <div className={"command-text muted"}> include compression here 
+            ffmpeg -i {name} -q:v {formattedQuality} {outputName}.{outputExtension} replace this with new custom name later.
           </div>
+           */}
+
         </div>
       </section>
-      <section>
-        <h3>3. Run and get the output file</h3>
+      <section className={names.length === 0 ? "section-disabled" : ""}>
+        <h3>Output</h3>
+        <h4>Pattern</h4>
+        <Tag large onClick={() => setOgOn(p => !p)} active={ogOn}>Original Name</Tag>
+        <Tag large onClick={() => setCustomOn(p => !p)}active={customOn}>Custom</Tag>
         <Input
-            value={outputName}
-            placeholder="Please enter the download file name"
-            onChange={(event) => setOutputName(event.target.value)}
+            value={customOutput} // todo: remove and replace this with custom name feature later.
+            placeholder="Custom output"
+            onChange={(event) => setCustomOutput(event.target.value)}
           /> 
+          {names.length > 0 && <p className="muted small">Example output: {outputName(names[0])}</p>}
         <Button type="primary" disabled={!Boolean(file)} onClick={handleExec}>
           run
         </Button>

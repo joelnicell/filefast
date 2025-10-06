@@ -8,6 +8,8 @@ import numerify from "numerify/lib/index.cjs";
 import { formatQuality, formatName } from "../utils";
 import qs from "query-string";
 import JSZip from "jszip";
+import ActionBtn from "../../components/ActionBtn";
+import Tag from "../../components/Tag";
 
 const { Dragger } = Upload;
 const SLIDER_MAX = 100;
@@ -19,6 +21,7 @@ const App = () => {
   const [quality, setQuality] = useState(SLIDER_MAX * 0.7);
   const [compression, setCompression] = useState(SLIDER_MAX * 0.8);
   const [outputExtension, setOutputExtension] = useState("jpg");
+  const [action, setAction] = useState("convert"); // convert, compress
 
   const [files, setFiles] = useState("");
   const [outputFiles, setOutputFiles] = useState([]);
@@ -140,22 +143,22 @@ const App = () => {
   };
 
   // load ffmpeg
-  useEffect(() => {
-    (async () => {
-      ffmpeg.current = createFFmpeg({
-        log: true,
-        corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
-      });
-      ffmpeg.current.setProgress(({ ratio }) => {
-        console.log(ratio);
-        setTip(numerify(ratio, "0.0%"));
-      });
-      setTip("ffmpeg static resource loading...");
-      setSpinning(true);
-      await ffmpeg.current.load();
-      setSpinning(false);
-    })();
-  }, []);
+  // useEffect(() => {
+  //   (async () => {
+  //     ffmpeg.current = createFFmpeg({
+  //       log: true,
+  //       corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+  //     });
+  //     ffmpeg.current.setProgress(({ ratio }) => {
+  //       console.log(ratio);
+  //       setTip(numerify(ratio, "0.0%"));
+  //     });
+  //     setTip("ffmpeg static resource loading...");
+  //     setSpinning(true);
+  //     await ffmpeg.current.load();
+  //     setSpinning(false);
+  //   })();
+  // }, []);
 
   useEffect(() => {
     const { quality, compression, output } = qs.parse(
@@ -189,7 +192,7 @@ const App = () => {
         </Spin>
       )}
 
-      <h2 align="center">filefast</h2>
+      <h2 align="center">FileFast</h2>
       <section>
         <h3>1. Select file</h3>
         <p className="muted">
@@ -214,8 +217,18 @@ const App = () => {
       </section>
 
       <section>
-        <h3>2. Convert to</h3>
-        <p>.jpg</p>
+        <h3>What do you want to do?</h3>
+        <div className="btn-container">
+          <ActionBtn onClick={() => setAction("convert")} active={action == "convert"}>Convert</ActionBtn>
+          <ActionBtn onClick={() => setAction("compress")} active={action == "compress"}>Compress</ActionBtn>
+        </div>
+        <div className="tag-container">
+          <Tag onClick={() => {}}>.jpeg</Tag>
+          <Tag onClick={() => {}} disabled>.png</Tag>
+          <Tag onClick={() => {}} disabled>.tiff</Tag>
+          <Tag onClick={() => {}} disabled>.webp</Tag>
+          <Tag onClick={() => {}} disabled>.avif</Tag>
+        </div>
         <div className="exec">
           <h4>Quality</h4>
           <Slider 
@@ -223,6 +236,7 @@ const App = () => {
             max={100}
             value={quality}
             onChange={(value) => setQuality(value)}
+            handleActiveColor="#2da8b0"
             />
           <p className="muted small">Higher quality means larger file size</p>
           <h4>Compression</h4>
@@ -231,6 +245,7 @@ const App = () => {
             onChange={(value) => setCompression(value)}
             min={0}
             max={100}
+            className=""
           />
           <p className="muted small">Higher compression has better results, but may take longer to process. Not yet implemented</p>
           {/* 

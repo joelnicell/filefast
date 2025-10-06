@@ -58,7 +58,6 @@ const App = () => {
     if (!file) {
       return;
     }
-    setOutputFiles([]);
     setHref("");
     setDownloadFileName("");
     try {
